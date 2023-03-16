@@ -1,0 +1,38 @@
+version: '3'
+
+networks:
+  default:
+    external:
+      name: sentino
+
+services:
+  db:
+    image: postgres:11-alpine
+    restart: always
+    hostname: demo-db
+    container_name: demo-db
+    volumes:
+      - ${DB_DIR}:/var/lib/postgresql/data
+    environment:
+      - 'POSTGRES_PASSWORD=password'
+
+  adminer:
+    image: adminer
+    restart: always
+    hostname: demo-adminer
+    container_name: demo-adminer
+    depends_on:
+      - db
+    environment:
+      - 'ADMINER_DEFAULT_SERVER=demo-db'
+      - 'ADMINER_DESIGN=nette'
+
+  db-app:
+    build: ./
+    restart: always
+    hostname: db-app
+    container_name: db-app
+    volumes:
+      - ./${DB_OUTPUT}:/db_app/${DB_OUTPUT}
+    depends_on:
+      - db

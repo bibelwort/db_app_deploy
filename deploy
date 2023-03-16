@@ -1,0 +1,107 @@
+#!/bin/bash
+
+# Exit-codes:
+EXIT_SUCCESS=0
+EXIT_HELP=1
+EXIT_ERROR=2
+
+# Global variables:
+SOURCES="https://github.com/bibelwort/db_app/archive/refs/heads/main.zip"
+WORKDIR="$( readlink -e "$( dirname "$0" )" )"
+DB_DIR=""
+DB_OUTPUT="db_out.log"
+
+function print_error () {
+	echo -e "\nERROR! \t$1"
+}
+
+
+function check_error () {
+	if [[ "$1" != "0" ]]; then
+		print_error "$2"
+		exit ${EXIT_ERROR}
+	fi
+}
+
+
+function print_help () {
+	echo -e "\n$( basename ${0} ):"
+	echo -e "\nDeploy db_app"
+	
+	echo -e "\nUSAGE:"
+	echo -e "\t$( basename ${0} ) [OPTIONS]"
+
+	echo -e "\nOPTIONS:"
+	echo -e "\t--db <dirname>\t- DB data directory (default: ./data)"
+	echo -e "\t--help         \t- Print this message\n"
+	exit ${EXIT_HELP}
+}
+
+
+function make_dbdir () {
+	# Make a directory for the DB
+    
+    if [[ ! -d "${DB_DIR}" ]]; then
+		mkdir -p "${DB_DIR}"
+        check_error "$?" "Cannot create directory '${DB_DIR}'"
+	fi
+    
+    if [[ ! -f "${DB_OUTPUT}" ]]; then
+		touch "${DB_OUTPUT}"
+        check_error "$?" "Cannot create output-file '${DB_OUTPUT}'"
+	fi
+}
+
+
+function download_sources () {
+	# Download source from the GitHub repository
+	if [[ -f app.py ]] && [[ -f Dockerfile ]]; then
+        return
+    fi
+	
+	wget -q "${SOURCES}"
+	check_error "$?" "Cannot download sources"
+	
+	unzip -q "./main.zip"
+	check_error "$?" "Cannot unzip file 'main.zip'"
+	
+	cp -r ./db_app-main/* ./ && \
+        rm -rf ./db_app-main && \
+        rm -f main.zip
+}
+
+
+function main () {
+	cd "${WORKDIR}"
+    while [[ -n "$1" ]]; do
+		case $1 in
+		--db )
+			shift
+			DB_DIR="$1"
+		;;
+		--help )
+			print_help
+		;;
+		* )
+			print_error "Unknown parameter '$1'"
+			print_help
+		esac
+		shift
+	done
+	
+	if [[ -z "${DB_DIR}" ]]; then
+		DB_DIR="${WORKDIR}/data"
+	fi
+    
+    export DB_DIR
+    export DB_OUTPUT
+    
+    make_dbdir
+	download_sources
+    
+    docker-compose up --detach
+}
+
+##############################################################################
+main "$@"
+exit ${EXIT_SUCCESS}
