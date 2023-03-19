@@ -1,15 +1,10 @@
-# Simple DB reader
+# Deploy workflow for "db_app"
 
-This app makes a connection to PostgreSQL DB
-and print all data to file each 5 seconds
+Creates environment for "db_app": starts PostgreSQL DB and Adminer, 
+builds Docker image with db_app and connects all together
 
-Installation:
+RUN:
 ```bash
-pip install --upgrade pip
-pip install git+https://github.com/bibelwort/example_package.git@main
-```
-
-Run:
-```bash
-python app.py
+chmod +x deploy
+deploy
 ```
