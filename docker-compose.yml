@@ -12,7 +12,7 @@ services:
     hostname: demo-db
     container_name: demo-db
     volumes:
-      - ${DB_DIR}:/var/lib/postgresql/data
+      - ${LOCAL_DB_DIR}:/var/lib/postgresql/data
     environment:
       - 'POSTGRES_PASSWORD=password'
 
@@ -33,6 +33,6 @@ services:
     hostname: db-app
     container_name: db-app
     volumes:
-      - ./${DB_OUTPUT}:/db_app/${DB_OUTPUT}
+      - ./${LOCAL_APP_LOG}:/db_app/app.log
     depends_on:
       - db

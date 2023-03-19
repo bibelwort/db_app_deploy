@@ -8,8 +8,8 @@ EXIT_ERROR=2
 # Global variables:
 SOURCES="https://github.com/bibelwort/db_app/archive/refs/heads/main.zip"
 WORKDIR="$( readlink -e "$( dirname "$0" )" )"
-DB_DIR=""
-DB_OUTPUT="db_out.log"
+LOCAL_DB_DIR=""
+LOCAL_APP_LOG="${WORKDIR}/app.log"
 
 function print_error () {
 	echo -e "\nERROR! \t$1"
@@ -41,14 +41,17 @@ function print_help () {
 function make_dbdir () {
 	# Make a directory for the DB
     
-    if [[ ! -d "${DB_DIR}" ]]; then
-		mkdir -p "${DB_DIR}"
-        check_error "$?" "Cannot create directory '${DB_DIR}'"
+    if [[ ! -d "${LOCAL_DB_DIR}" ]]; then
+		mkdir -p "${LOCAL_DB_DIR}"
+        check_error "$?" "Cannot create directory '${LOCAL_DB_DIR}'"
 	fi
-    
-    if [[ ! -f "${DB_OUTPUT}" ]]; then
-		touch "${DB_OUTPUT}"
-        check_error "$?" "Cannot create output-file '${DB_OUTPUT}'"
+}
+
+
+function create_local_log_file () {
+    if [[ ! -f "${LOCAL_APP_LOG}" ]]; then
+		touch "${LOCAL_APP_LOG}"
+        check_error "$?" "Cannot create output-file '${LOCAL_APP_LOG}'"
 	fi
 }
 
@@ -71,13 +74,27 @@ function download_sources () {
 }
 
 
+function create_local_env_file () {
+	env_file="${WORKDIR}/.env"
+	if [[ -f "${env_file}" ]]; then
+        rm -f "${env_file}"
+        check_error "$?" "Cannot remove existing '.env' file"
+    fi
+	
+	touch "${env_file}"
+    check_error "$?" "Cannot create '.env' file"
+    echo "LOCAL_DB_DIR=\"${LOCAL_DB_DIR}\"" &> "${env_file}"
+    echo "LOCAL_APP_LOG=\"${LOCAL_APP_LOG}\"" &>> "${env_file}"
+}
+
+
 function main () {
 	cd "${WORKDIR}"
     while [[ -n "$1" ]]; do
 		case $1 in
 		--db )
 			shift
-			DB_DIR="$1"
+			LOCAL_DB_DIR="$1"
 		;;
 		--help )
 			print_help
@@ -89,15 +106,14 @@ function main () {
 		shift
 	done
 	
-	if [[ -z "${DB_DIR}" ]]; then
-		DB_DIR="${WORKDIR}/data"
+	if [[ -z "${LOCAL_DB_DIR}" ]]; then
+		LOCAL_DB_DIR="${WORKDIR}/data"
 	fi
     
-    export DB_DIR
-    export DB_OUTPUT
-    
     make_dbdir
+    create_local_log_file
 	download_sources
+    create_local_env_file
     
     docker-compose up --detach
 }
