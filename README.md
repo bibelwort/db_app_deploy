@@ -5,6 +5,5 @@ builds Docker image with db_app and connects all together
 
 RUN:
 ```bash
-chmod +x deploy
 deploy
 ```

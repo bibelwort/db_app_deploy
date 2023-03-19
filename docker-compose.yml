@@ -33,6 +33,6 @@ services:
     hostname: db-app
     container_name: db-app
     volumes:
-      - ./${LOCAL_APP_LOG}:/db_app/app.log
+      - ${LOCAL_APP_LOG}:/db_app/app.log
     depends_on:
       - db
